@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,9 +19,15 @@ public class TaskStateDto {
 
     private String name;
 
-    private Long ordinal;
+    @JsonProperty("left_task_state_id")
+    private Long leftTaskStateId;
+
+    @JsonProperty("right_task_state_id")
+    private Long rightTaskStateId;
 
     @JsonProperty("created_at")
     private Instant createdAt;
+
+    List<TaskDto> tasks;
 
 }

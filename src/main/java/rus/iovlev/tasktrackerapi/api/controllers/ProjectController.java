@@ -3,6 +3,7 @@ package rus.iovlev.tasktrackerapi.api.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rus.iovlev.tasktrackerapi.api.controllers.helpers.ControllerHelper;
 import rus.iovlev.tasktrackerapi.api.dto.AskDto;
 import rus.iovlev.tasktrackerapi.api.dto.ProjectDto;
 import rus.iovlev.tasktrackerapi.api.exceptions.BadRequestException;
@@ -22,13 +23,15 @@ import java.util.stream.Stream;
 @RestController
 public class ProjectController {
 
-    ProjectRepository projectRepository;
+    private final ProjectRepository projectRepository;
 
     private final ProjectDtoFactory projectDtoFactory;
 
+    private  final ControllerHelper controllerHelper;
+
+    public static final String CREATE_OR_UPDATE_PROJECT = "/api/projects";
     public static final String FETCH_PROJECTS = "/api/projects";
     public static final String DELETE_PROJECT = "/api/projects/{project_id}";
-    public static final String CREATE_OR_UPDATE_PROJECT = "/api/projects";
 
 
     @GetMapping(FETCH_PROJECTS)
@@ -38,7 +41,7 @@ public class ProjectController {
 
         Stream<ProjectEntity> projectStream = optionalPrefixName
                 .map(projectRepository::streamAllByNameStartsWithIgnoreCase)
-                .orElseGet(projectRepository::streamAll);
+                .orElseGet(projectRepository::streamAllBy);
 
         return projectStream.map(projectDtoFactory::makeProjectDto)
                 .collect(Collectors.toList());
@@ -47,7 +50,7 @@ public class ProjectController {
     @DeleteMapping(DELETE_PROJECT)
     public AskDto deleteProject(@PathVariable("project_id") Long projectId){
 
-        ProjectEntity project = getProjectOrThrowException(projectId);
+        controllerHelper.getProjectOrThrowException(projectId);
 
         projectRepository.deleteById(projectId);
 
@@ -68,7 +71,7 @@ public class ProjectController {
         }
 
         final ProjectEntity project = optionalProjectId
-                .map(this::getProjectOrThrowException)
+                .map(controllerHelper::getProjectOrThrowException)
                 .orElseGet(() -> ProjectEntity.builder().build());
 
         optionalProjectName
@@ -88,17 +91,6 @@ public class ProjectController {
        return projectDtoFactory.makeProjectDto(savedProject);
     }
 
-    private ProjectEntity getProjectOrThrowException(Long projectId) {
-        return projectRepository
-                .findById(projectId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format(
-                                        "Project with \"%s\" doesn't exist.",
-                                        projectId
-                                )
-                        )
-                );
-    }
+
 
 }
